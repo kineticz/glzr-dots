@@ -1,18 +1,14 @@
 general:
   # Commands to run when the WM has started.
   startup_commands:
-    # --- Top bar: pick ONE (see README "Choose your bar") ---
-    # Default is the Command Palette Dock, which needs NO startup line here
-    # (enable it in Command Palette settings; it reserves space via the AppBar API).
-    # For the Zebar bar instead: uncomment the next line AND set
-    # gaps.outer_gap.top to 50px below.
-    # - 'shell-exec zebar'   # Zebar uninstalled; using the Dock instead
+    # Zebar top bar (overline-zebar; see README "Choose your bar").
+    - 'shell-exec zebar'
     - 'shell-exec pythonw "%USERPROFILE%\.glzr\glazewm\autotile.py"'
     # Omarchy-style universal clipboard: Alt+C/V/X -> Ctrl+Insert/Shift+Insert/Ctrl+X
     - 'shell-exec pythonw "%USERPROFILE%\.glzr\glazewm\clipboard.py"'
 
   # Commands to run just before the WM is shutdown.
-  shutdown_commands: []
+  shutdown_commands: ['shell-exec taskkill /IM zebar.exe /F']
 
   config_reload_commands: []
 
@@ -41,10 +37,8 @@ gaps:
   inner_gap: '5px'
 
   outer_gap:
-    # overline-zebar docks and reserves its own screen space (windows already
-    # start below the bar), so only a small cosmetic gap is needed here.
-    # A large value would stack on top of the reserved space.
-    top: '2px'
+    # Reserve room for the Zebar top bar.
+    top: '50px'
     right: '10px'
     bottom: '10px'
     left: '10px'
