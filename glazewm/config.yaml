@@ -4,7 +4,7 @@ general:
     # Zebar top bar (overline-zebar; see README "Choose your bar").
     - 'shell-exec zebar'
     - 'shell-exec pythonw "%USERPROFILE%\.glzr\glazewm\autotile.py"'
-    # Omarchy-style universal clipboard: Alt+C/V/X -> Ctrl+Insert/Shift+Insert/Ctrl+X
+    # Universal clipboard and fast Alt+Enter handoff to an existing Terminal.
     - 'shell-exec pythonw "%USERPROFILE%\.glzr\glazewm\clipboard.py"'
 
   # Commands to run just before the WM is shutdown.
@@ -33,15 +33,15 @@ general:
 gaps:
   scale_with_dpi: true
 
-  # Omarchy defaults: gapsin:5, gapsout:10
-  inner_gap: '5px'
+  # No spacing between tiled windows; only reserve space for Zebar.
+  inner_gap: '0px'
 
   outer_gap:
-    # Reserve room for the Zebar top bar.
-    top: '50px'
-    right: '10px'
-    bottom: '10px'
-    left: '10px'
+    # Match the Zebar top bar height exactly, without extra spacing.
+    top: '36px'
+    right: '0px'
+    bottom: '0px'
+    left: '0px'
 
 window_effects:
   focused_window:
@@ -362,11 +362,9 @@ keybindings:
   # ===================================================================
 
   # Terminal — Omarchy: Super + Return
-  # Opens in the cwd of the focused/most-recent terminal on this workspace
-  # (home on a fresh workspace), like Omarchy's omarchy-cmd-terminal-cwd.
-  # See glazewm/new-terminal.py + the prompt hook in powershell/profile.ps1.
-  # pythonw: no console window (a hidden one would grab a tile slot).
-  - commands: ['shell-exec pythonw "%USERPROFILE%\.glzr\glazewm\new-terminal.py"']
+  # Cold-start fallback. clipboard.py handles warm starts via terminal_fast.py.
+  # Always open a new window in home; let GlazeWM handle tiling (no fullscreen).
+  - commands: ['shell-exec wt.exe -w new -d "%USERPROFILE%"']
     bindings: ['alt+enter']
 
   # Browser (Zen) — Omarchy: Super + Shift + B

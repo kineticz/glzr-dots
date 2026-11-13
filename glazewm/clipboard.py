@@ -10,15 +10,17 @@ matching the rest of this config:
     Alt + V         ->  Shift + Insert   paste  (works in terminals + GUI)
     Alt + X         ->  Ctrl + X         cut    (GUI only, same as Omarchy)
     Alt + Ctrl + V  ->  Win + V          Windows clipboard history
+    Alt + Enter     ->  new WT window    fast handoff if Terminal is running
 
 Implementation: a WH_KEYBOARD_LL low-level keyboard hook using only the stdlib
-(ctypes). It intercepts ONLY the four chords above and passes every other key -
+(ctypes). It intercepts ONLY the chords above and passes every other key -
 including all of GlazeWM's Alt bindings - straight through. Native Ctrl+C/Ctrl+V
 keep working as a fallback. The held Alt (and Ctrl) is released around the
 injected chord so e.g. Alt+C produces a clean Ctrl+Insert, not Alt+Ctrl+Insert.
 
 Started automatically by GlazeWM via startup_commands under pythonw, exactly
-like autotile.py.
+like autotile.py. Alt+Enter uses terminal_fast.py's worker, bypassing process
+startup for WT 1.24. If unavailable, GlazeWM's ordinary binding handles the key.
 """
 import ctypes
 from ctypes import wintypes
@@ -208,7 +210,26 @@ def remap(*combo):
 
 
 # --- the hook ---------------------------------------------------------------
+_terminal_launcher = None
+_terminal_enter_down = False
+
+
 def _proc(nCode, wParam, lParam):
+    global _terminal_enter_down
+    if nCode == HC_ACTION:
+        kb = ctypes.cast(lParam, ctypes.POINTER(KBDLLHOOKSTRUCT)).contents
+        if kb.vkCode == 0x0D and kb.dwExtraInfo != MAGIC:
+            if _terminal_enter_down:
+                if wParam in (0x0101, 0x0105):  # WM_KEYUP / WM_SYSKEYUP
+                    _terminal_enter_down = False
+                return 1  # Suppress repeats and the matching Enter-up, too.
+            if (wParam in (WM_KEYDOWN, WM_SYSKEYDOWN)
+                    and kb.flags & 0x20  # LLKHF_ALTDOWN
+                    and not any(_down(vk) for vk in (*CTRL_VKS, 0xA0, 0xA1, 0x5B, 0x5C))
+                    and _terminal_launcher is not None
+                    and _terminal_launcher.try_launch()):
+                _terminal_enter_down = True
+                return 1
     if nCode == HC_ACTION and wParam in (WM_KEYDOWN, WM_SYSKEYDOWN):
         kb = ctypes.cast(lParam, ctypes.POINTER(KBDLLHOOKSTRUCT)).contents
         if kb.dwExtraInfo != MAGIC:                     # skip our own injection
@@ -241,6 +262,9 @@ _HOOK_REF = HOOKPROC(_proc)   # module-global: must outlive the process
 
 
 def main():
+    global _terminal_launcher
+    from terminal_fast import FastTerminalLauncher
+    _terminal_launcher = FastTerminalLauncher()
     hook = user32.SetWindowsHookExW(WH_KEYBOARD_LL, _HOOK_REF,
                                     kernel32.GetModuleHandleW(None), 0)
     if not hook:

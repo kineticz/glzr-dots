@@ -120,7 +120,8 @@ Then launch GlazeWM. It starts the autotile and clipboard scripts automatically 
 ├── glazewm/
 │   ├── config.yaml      # keybindings, workspaces, gaps, window rules
 │   ├── autotile.py      # dwindle-layout autotiler (WebSocket client)
-│   └── clipboard.py     # Omarchy-style universal clipboard (Alt+C/V/X) — ctypes keyboard hook
+│   ├── clipboard.py     # Universal clipboard and fast Alt+Enter — ctypes keyboard hook
+│   └── terminal_fast.py # Direct handoff to an existing Windows Terminal 1.24 engine
 ├── cmdpal/
 │   └── README.md        # pointer to the GlazeWMDock Command Palette Dock extension (default bar)
 ├── zebar/
@@ -365,6 +366,17 @@ Same letters as Omarchy, mapped to Windows-native apps.
 | <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd> | Outlook calendar (Edge PWA) | `Super + Shift + C` (calendar) |
 | <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd> | Microsoft Teams | `Super + Shift + G` (messaging) |
 | <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>A</kbd> | Gemini (Edge PWA) | `Super + Shift + A` (AI) |
+
+`Alt+Enter` opens a **new tiled window in home**. When Windows Terminal 1.24 is
+already running, the resident clipboard helper uses `terminal_fast.py` to send
+WT's native command-line handoff directly to its engine, avoiding an extra
+`wt.exe` process and GlazeWM's shell-launch path. Measured key-to-visible-window
+time on this machine: roughly **150 ms instead of 330 ms**. Discovery and IPC
+run on a worker, not inside the keyboard hook. No hidden windows are prestarted.
+The private handoff protocol is version-checked: cold starts, other WT versions,
+and an unavailable helper use the ordinary GlazeWM binding instead. Restart the
+clipboard helper (or GlazeWM) after editing its Python files; config reload alone
+does not restart it.
 
 ### Clipboard
 
